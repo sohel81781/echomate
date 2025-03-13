@@ -1,0 +1,70 @@
+// Frontend: React.js (Basic UI for Echo Mate Lite)
+
+import React, { useState, useEffect } from "react";
+import axios from "axios";
+
+const API_URL = "3.7.70.214:3000"; // Update this with your actual EC2 IP
+
+function App() {
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [token, setToken] = useState(localStorage.getItem("token") || "");
+  const [posts, setPosts] = useState([]);
+  const [newPost, setNewPost] = useState("");
+
+  useEffect(() => {
+    if (token) {
+      fetchPosts();
+    }
+  }, [token]);
+
+  const signup = async () => {
+    await axios.post(`${API_URL}/signup`, { username, password });
+    alert("Signup successful! Please log in.");
+  };
+
+  const login = async () => {
+    const res = await axios.post(`${API_URL}/login`, { username, password });
+    setToken(res.data.token);
+    localStorage.setItem("token", res.data.token);
+  };
+
+  const fetchPosts = async () => {
+    const res = await axios.get(`${API_URL}/posts`);
+    setPosts(res.data);
+  };
+
+  const createPost = async () => {
+    await axios.post(`${API_URL}/post`, { username, content: newPost });
+    setNewPost("");
+    fetchPosts();
+  };
+
+  return (
+    <div>
+      {!token ? (
+        <div>
+          <h2>Signup / Login</h2>
+          <input placeholder="Username" onChange={(e) => setUsername(e.target.value)} />
+          <input type="password" placeholder="Password" onChange={(e) => setPassword(e.target.value)} />
+          <button onClick={signup}>Signup</button>
+          <button onClick={login}>Login</button>
+        </div>
+      ) : (
+        <div>
+          <h2>Welcome, {username}</h2>
+          <input placeholder="Write a post..." value={newPost} onChange={(e) => setNewPost(e.target.value)} />
+          <button onClick={createPost}>Post</button>
+          <h3>Feed:</h3>
+          {posts.map((post) => (
+            <div key={post.id}>
+              <p><strong>{post.username}</strong>: {post.content}</p>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+export default App;
